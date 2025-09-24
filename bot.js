@@ -38,7 +38,7 @@ try {
 }
 
 // Proxy (optional)
-const INDIAN_PROXY = process.env.INDIAN_PROXY || null; // set env if needed
+const INDIAN_PROXY = process.env.INDIAN_PROXY || null;
 let proxyAgent = null;
 try {
   if (INDIAN_PROXY) proxyAgent = new HttpsProxyAgent(INDIAN_PROXY);
@@ -55,11 +55,9 @@ let nickRemoveEnabled = false;
 let gcAutoRemoveEnabled = false;
 let antiOutEnabled = false;
 
-// === Cache for deleted messages ===
-// store { messageID: { sender, body, ts, threadID } }
+// Cache for deleted messages
 const messageCache = {};
 
-// helper to extract message id robustly
 function extractMsgId(ev) {
   return (
     ev.messageID ||
@@ -116,12 +114,10 @@ async function setTitleSafe(title, threadID) {
 
 function parseMentionTarget(event) {
   try {
-    // if mentions is object with keys = uids
     if (event.mentions && typeof event.mentions === "object") {
       const keys = Object.keys(event.mentions);
       if (keys.length > 0) return keys[0];
     }
-    // message reply
     if (event.messageReply && event.messageReply.senderID) {
       return String(event.messageReply.senderID);
     }
@@ -129,7 +125,6 @@ function parseMentionTarget(event) {
   return null;
 }
 
-// helper: detect whether a thread is group-like
 function isGroupThreadInfo(info) {
   try {
     if (!info) return false;
@@ -140,7 +135,19 @@ function isGroupThreadInfo(info) {
   return false;
 }
 
-// Start
+// Anti-sleep strong mode
+function antiSleepLoop() {
+  setInterval(() => {
+    if (GROUP_THREAD_ID) {
+      try {
+        api.sendTypingIndicator(GROUP_THREAD_ID, true);
+        setTimeout(() => api.sendTypingIndicator(GROUP_THREAD_ID, false), 1200);
+        log("💤 Anti-Sleep Triggered");
+      } catch {}
+    }
+  }, 60000);
+}
+
 function startBot() {
   login(
     {
@@ -159,19 +166,8 @@ function startBot() {
       api.setOptions({ listenEvents: true, selfListen: true });
 
       log("🤖 BOT ONLINE");
+      antiSleepLoop();
 
-      // Anti-sleep (keeps presence active)
-      setInterval(() => {
-        if (GROUP_THREAD_ID) {
-          try {
-            api.sendTypingIndicator(GROUP_THREAD_ID, true);
-            setTimeout(() => api.sendTypingIndicator(GROUP_THREAD_ID, false), 1500);
-            log("💤 Anti-Sleep Triggered");
-          } catch {}
-        }
-      }, 300000);
-
-      // Save appstate periodically
       setInterval(() => {
         try {
           const st = api.getAppState ? api.getAppState() : appState;
@@ -180,7 +176,6 @@ function startBot() {
         } catch {}
       }, 600000);
 
-      // Listen
       api.listenMqtt(async (err, event) => {
         if (err) return log("❌ Listen error: " + err);
 
@@ -189,7 +184,6 @@ function startBot() {
         const bodyRaw = event.body || "";
         const body = (bodyRaw || "").toLowerCase();
 
-        // ----- Cache incoming messages for unsend detection -----
         const incomingMsgId = extractMsgId(event);
         if (event.type === "message" && incomingMsgId) {
           messageCache[incomingMsgId] = {
@@ -198,11 +192,10 @@ function startBot() {
             ts: Date.now(),
             threadID
           };
-          // keep cache for 30 minutes
           setTimeout(() => delete messageCache[incomingMsgId], 1000 * 60 * 30);
         }
 
-        // ----- Commands (admin only) -----
+        // ===== COMMANDS =====
         if (body === "help" && senderID === BOSS_UID) {
           const msg = `
 📜 COMMANDS:
@@ -220,19 +213,12 @@ function startBot() {
           return api.sendMessage(msg.trim(), threadID);
         }
 
-        // --------- NEW: /uid command (works in group & personal) ----------
         if (body === "/uid") {
-          try {
-            // send in same thread (works for group & personal)
-            await api.sendMessage(`📌 Thread ID: ${threadID}\n👤 Your UID: ${senderID}`, threadID);
-          } catch (e) {
-            log("❌ /uid send failed: " + e);
-          }
-          // continue processing other events
+          try { await api.sendMessage(`📌 Thread ID: ${threadID}\n👤 Your UID: ${senderID}`, threadID); } catch {}
           if (!event.type) return;
         }
 
-        // /gclock
+        // --- GCLOCK ---
         if (body.startsWith("/gclock") && senderID === BOSS_UID) {
           const newName = bodyRaw.slice(7).trim();
           if (!newName) return api.sendMessage("❌ Provide a name", threadID);
@@ -243,7 +229,6 @@ function startBot() {
           return api.sendMessage(`🔒 GC locked as "${newName}"`, threadID);
         }
 
-        // /gcremove
         if (body === "/gcremove" && senderID === BOSS_UID) {
           await setTitleSafe("", threadID);
           GROUP_THREAD_ID = threadID;
@@ -252,18 +237,15 @@ function startBot() {
           return api.sendMessage("🧹 GC name removed. Auto-remove ON", threadID);
         }
 
-        // /nicklock on
+        // --- NICKLOCK ---
         if (body.startsWith("/nicklock on") && senderID === BOSS_UID) {
           const requested = bodyRaw.split(" ").slice(2).join(" ").trim();
           if (!requested) return api.sendMessage("❌ Provide a nickname", threadID);
-          lockedNick = `${requested} — Locked by ANURAG MISHRA`;
+          lockedNick = requested;
           nickLockEnabled = true;
           try {
             const info = await api.getThreadInfo(threadID);
-            for (const u of info.userInfo) {
-              await setNickSafe(lockedNick, threadID, u.id);
-            }
-            log(`🔐 NickLock applied: ${lockedNick}`);
+            for (const u of info.userInfo) await setNickSafe(lockedNick, threadID, u.id);
             return api.sendMessage(`🔐 Nickname locked as "${lockedNick}"`, threadID);
           } catch (e) {
             log("❌ Error applying nicklock: " + e);
@@ -271,21 +253,17 @@ function startBot() {
           }
         }
 
-        // /nicklock off
         if (body === "/nicklock off" && senderID === BOSS_UID) {
           nickLockEnabled = false;
           lockedNick = null;
           return api.sendMessage("🔓 NickLock OFF", threadID);
         }
 
-        // /nickremoveall
         if (body === "/nickremoveall" && senderID === BOSS_UID) {
           nickRemoveEnabled = true;
           try {
             const info = await api.getThreadInfo(threadID);
-            for (const u of info.userInfo) {
-              await setNickSafe("", threadID, u.id);
-            }
+            for (const u of info.userInfo) await setNickSafe("", threadID, u.id);
             return api.sendMessage("💥 All nicknames cleared. Auto-remove ON", threadID);
           } catch (e) {
             log("❌ Error clearing nicks: " + e);
@@ -293,42 +271,32 @@ function startBot() {
           }
         }
 
-        // /nickremoveoff
         if (body === "/nickremoveoff" && senderID === BOSS_UID) {
           nickRemoveEnabled = false;
           return api.sendMessage("🛑 Auto nick remove OFF", threadID);
         }
 
-        // /setnick (mention or reply)
+        // /setnick
         if (body.startsWith("/setnick") && senderID === BOSS_UID) {
           const target = parseMentionTarget(event);
           let requestedNick = bodyRaw.split(" ").slice(1).join(" ").trim();
-          if (event.mentions) {
-            // remove mention display name from raw text (best-effort)
-            const mentionNames = Object.values(event.mentions).map(v => (typeof v === 'string' ? v : (v.name || ''))).filter(Boolean);
-            if (mentionNames.length > 0) requestedNick = requestedNick.replace(mentionNames[0], "").trim();
-          }
           if (!target && !event.messageReply) return api.sendMessage("❌ Mention or reply required", threadID);
           if (!requestedNick) return api.sendMessage("❌ Provide nickname", threadID);
           const victimId = target || String(event.messageReply.senderID);
-          const finalNick = `${requestedNick} — Locked by ANURAG MISHRA`;
-          await setNickSafe(finalNick, threadID, victimId);
+          await setNickSafe(requestedNick, threadID, victimId);
           return api.sendMessage(`✅ Nick set for ${victimId}`, threadID);
         }
 
-        // /antion
+        // --- ANTI-OUT ---
         if (body === "/antion" && senderID === BOSS_UID) {
           antiOutEnabled = true;
           return api.sendMessage("✅ Anti-Out ENABLED", threadID);
         }
-
-        // /antioff
         if (body === "/antioff" && senderID === BOSS_UID) {
           antiOutEnabled = false;
           return api.sendMessage("🛑 Anti-Out DISABLED", threadID);
         }
 
-        // /status
         if (body === "/status" && senderID === BOSS_UID) {
           const msg = `
 BOT STATUS:
@@ -340,9 +308,7 @@ BOT STATUS:
           return api.sendMessage(msg.trim(), threadID);
         }
 
-        // ----- Protections & Event handlers -----
-
-        // thread name changed
+        // ===== Event protections =====
         if (event.logMessageType === "log:thread-name") {
           const changed = event.logMessageData?.name || "";
           if (LOCKED_GROUP_NAME && threadID === GROUP_THREAD_ID && changed !== LOCKED_GROUP_NAME) {
@@ -354,7 +320,6 @@ BOT STATUS:
           }
         }
 
-        // nickname changed
         if (event.logMessageType === "log:user-nickname" || event.logMessageType === "log:user-nick") {
           const changedUID = event.logMessageData?.participant_id || event.logMessageData?.participantID;
           const newNick = event.logMessageData?.nickname || "";
@@ -368,7 +333,7 @@ BOT STATUS:
           }
         }
 
-        // user removed/left (anti-out) — **ROBUST FIXED**: try multiple fields, detect group, notify admin on failure
+        // ===== Anti-out handling =====
         if (
           ["log:unsubscribe", "log:remove", "log:remove-participant", "log:user-left"].includes(event.logMessageType)
           || event.logMessageType?.includes("remove")
@@ -387,36 +352,16 @@ BOT STATUS:
               log("⚠️ Anti-out event but leftUID not found");
             } else {
               log(`⚠️ Detected leave/remove: ${leftUID} in ${threadID} (antiOutEnabled=${antiOutEnabled})`);
-
-              // If antiOut not enabled, just notify admin (don't auto-add)
-              if (!antiOutEnabled) {
-                try { await api.sendMessage(`⚠️ ${leftUID} left group ${threadID} (anti-out disabled)`, BOSS_UID); } catch {}
-              } else {
-                // Ensure it's a group before adding
-                let isGroup = false;
+              if (antiOutEnabled) {
                 try {
                   const info = await api.getThreadInfo(threadID);
-                  isGroup = isGroupThreadInfo(info);
-                } catch (e) {
-                  // fallback: treat long threadIDs as group (best-effort)
-                  isGroup = (String(threadID).length > 10);
-                }
-
-                if (!isGroup) {
-                  log("ℹ️ Not a group thread — skipping addUserToGroup");
-                  try { await api.sendMessage(`⚠️ ${leftUID} left personal chat ${threadID}`, BOSS_UID); } catch {}
-                } else {
-                  try {
+                  if (isGroupThreadInfo(info)) {
                     await api.addUserToGroup(String(leftUID), threadID);
                     await api.sendMessage(`🚨 Anti-Out: Added back ${leftUID}`, threadID);
                     log(`🚨 Anti-Out: Added back ${leftUID} to ${threadID}`);
-                  } catch (e) {
-                    log("❌ Anti-out addUserToGroup failed: " + e);
-                    // notify admin with brief error
-                    try {
-                      await api.sendMessage(`❌ Anti-Out failed to add ${leftUID} back to ${threadID}. Check bot permissions.`, BOSS_UID);
-                    } catch (ee) { log("❌ Notify admin failed: " + ee); }
                   }
+                } catch (e) {
+                  log("❌ Anti-out addUserToGroup failed: " + e);
                 }
               }
             }
@@ -425,11 +370,10 @@ BOT STATUS:
           }
         }
 
-        // ===== Unsend / deleted message detection (now shows only text if cached) =====
+        // ===== Unsend / deleted message detection =====
         const isUnsendEvent =
           event.type === "message_unsend" ||
           event.logMessageType === "log:thread-message-deleted" ||
-          event.logMessageType === "log:message_unsend" ||
           event.logMessageType === "log:message_unsend";
 
         if (isUnsendEvent) {
@@ -446,7 +390,6 @@ BOT STATUS:
 
             let cached = deletedMessageId ? messageCache[deletedMessageId] : null;
 
-            // fallback: try find most recent cached message by same sender (last 30 min)
             if (!cached && unsendBy) {
               let candidate = null;
               const now = Date.now();
@@ -461,14 +404,13 @@ BOT STATUS:
               }
             }
 
-            // SEND ONLY TEXT (no messageID printed)
             if (cached && cached.body && cached.body.trim() !== "") {
               const txt = `🗑️ Deleted message: "${cached.body}"`;
-              try { await api.sendMessage(txt, threadID); } catch (e) { log("❌ send failed unsend text: " + e); }
+              try { await api.sendMessage(txt, threadID); } catch {}
               log(`🗑️ Unsend by ${unsendBy} in ${threadID} — "${cached.body}"`);
             } else {
               const txt = `🗑️ A message was deleted (content not cached).`;
-              try { await api.sendMessage(txt, threadID); } catch (e) { log("❌ send failed unsend generic: " + e); }
+              try { await api.sendMessage(txt, threadID); } catch {}
               log(`🗑️ Unsend by ${unsendBy} in ${threadID} — content not cached`);
             }
           } catch (e) {
@@ -476,7 +418,7 @@ BOT STATUS:
           }
         }
 
-      }); // end listenMqtt
+      });
     }
   );
 }
