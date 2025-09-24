@@ -13,78 +13,119 @@
       padding: 20px; 
     }
     .overlay {
-      background: rgba(11,18,32,0.85);
       min-height: 100vh;
       padding: 20px;
-      border-radius: 16px;
     }
     .card {
-      background: rgba(11,18,32,0.85); 
+      background: transparent; /* FULL transparent */
       padding: 20px; 
-      border-radius: 12px; 
-      box-shadow: 0 6px 25px rgba(2,6,23,.7); 
+      border-radius: 16px; 
       max-width: 950px; 
-      margin: 12px auto; 
-      border: 2px solid #06b6d4;
+      margin: 20px auto; 
+      border: 2px solid rgba(6,182,212,0.8);
+      box-shadow: 0 0 20px rgba(6,182,212,0.8); /* GLOW */
     }
     h2 {
       text-align: center; 
       color: #06b6d4; 
       margin-bottom: 12px;
+      font-size: 28px;
+      text-shadow: 0 0 12px rgba(6,182,212,1);
     }
-    h2 span { color: #f472b6; }
+    h2 span { 
+      color: #f472b6; 
+      text-shadow: 0 0 12px rgba(244,114,182,1); 
+    }
     textarea,input {
       width: 100%; 
       padding: 10px; 
-      border-radius: 8px; 
-      border: 1px solid #122235; 
-      background: #061226; 
-      color: #cfe6ff; 
+      border-radius: 10px; 
+      border: 1px solid rgba(6,182,212,0.7); 
+      background: transparent; /* transparent */
+      color: #fff; 
       font-family: monospace;
       margin-top: 6px;
+      box-shadow: 0 0 10px rgba(6,182,212,0.6); /* GLOW */
     }
     button {
-      padding: 10px 16px; 
-      border-radius: 8px; 
-      border: none; 
+      padding: 12px 18px; 
+      border-radius: 10px; 
+      border: 1px solid rgba(6,182,212,0.9);
       cursor: pointer; 
-      background: #06b6d4; 
-      color: #002024; 
+      background: transparent;
+      color: #fff; 
       font-weight: bold;
       flex: 1;
-      transition: 0.2s;
+      transition: 0.25s;
+      box-shadow: 0 0 15px rgba(6,182,212,0.8); /* glow */
+      text-shadow: 0 0 8px rgba(6,182,212,1);
     }
-    button:hover { background: #0284c7; color: #fff; }
+    button:hover { 
+      background: rgba(244,114,182,0.15);
+      border-color: rgba(244,114,182,1);
+      box-shadow: 0 0 18px rgba(244,114,182,1);
+      transform: scale(1.05);
+    }
     pre {
-      background:#021223; 
+      background: transparent; 
       padding:12px; 
-      border-radius:8px; 
+      border-radius:10px; 
       height: 320px; 
       overflow:auto; 
       margin-top:10px; 
       font-family: monospace;
+      border: 1px solid rgba(6,182,212,0.7);
+      box-shadow: 0 0 15px rgba(6,182,212,0.8); /* logs glow */
+      color: #dbeafe;
     }
-    .row { display:flex; gap:8px; margin-top:8px; }
-    label { font-weight: bold; margin-top:6px; display:block; }
-    .decor { text-align:center; margin-bottom:14px; font-size:20px; color:#f472b6; }
+    .row { display:flex; gap:10px; margin-top:8px; }
+    label { 
+      font-weight: bold; 
+      margin-top:6px; 
+      display:block; 
+      text-shadow: 0 0 8px rgba(6,182,212,0.8);
+    }
+    .decor { 
+      text-align:center; 
+      margin-bottom:14px; 
+      font-size:20px; 
+      color:#f472b6; 
+      text-shadow:0 0 12px rgba(244,114,182,1);
+    }
     .footer {
-      margin-top: 14px;
+      margin-top: 20px;
       text-align: center;
-      font-size: 14px;
-      color: #f472b6;
+    }
+    .whatsapp-btn {
+      display:inline-block;
+      padding:12px 22px;
+      border-radius:12px;
+      background:linear-gradient(135deg,#06b6d4,#0284c7);
+      color:#fff;
+      font-weight:bold;
+      text-decoration:none;
+      box-shadow:0 0 15px rgba(6,182,212,0.9);
+      text-shadow:0 0 8px rgba(6,182,212,1);
+      transition:0.25s;
+    }
+    .whatsapp-btn:hover {
+      background:linear-gradient(135deg,#f472b6,#db2777);
+      box-shadow:0 0 18px rgba(244,114,182,1);
+      transform: scale(1.07);
     }
     .stats {
       margin-top: 10px;
       font-size: 14px;
       color: #06b6d4;
       text-align: center;
+      text-shadow:0 0 10px rgba(6,182,212,1);
     }
   </style>
 </head>
 <body>
   <div class="overlay">
     <div class="card">
-      <h2>ANURAG MISHRA <span>👅</span>PANNEL</h2>
+      <h2>ANURAG MISHRA<span>❤️‍🔥</span>PANEL</h2>
       <div class="decor">✨ Welcome to your Love Bot ✨</div>
       <p>Paste your <strong>AppState JSON</strong> and <strong>Admin UID</strong>, then start your bot.</p>
 
@@ -100,7 +141,7 @@
         <button id="fetchLogs">Fetch Logs</button>
       </div>
 
-      <h3 style="margin-top:12px">Live Logs</h3>
+      <h3 style="margin-top:12px;text-shadow:0 0 10px rgba(6,182,212,1)">Live Logs</h3>
       <pre id="logs">(logs will appear here)</pre>
 
       <div class="stats">
@@ -109,7 +150,7 @@
       </div>
 
       <div class="footer">
-        📞 Contact on WhatsApp: <strong>6394812128</strong>
+        <a href="https://wa.me/916394812128" target="_blank" class="whatsapp-btn">📞 Contact on WhatsApp</a>
       </div>
     </div>
   </div>
@@ -126,11 +167,8 @@
     const usageSpan = document.getElementById('usage');
 
     const socket = io();
-    let currentUID = null;
     let startTime = null;
     let usageCount = 0;
-
-    socket.on('connect', () => { console.log('Socket connected'); });
 
     socket.on('botlog', (msg) => {
       logsPre.textContent += msg + "\n";
@@ -142,46 +180,34 @@
       const appstate = appstateInput.value.trim();
       if (!admin || !appstate) return alert('Admin UID and AppState are required');
 
-      try {
-        const res = await fetch('/start-bot', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify({ admin, appstate })
-        });
-        const text = await res.text();
-        alert(text);
-        currentUID = admin;
-        socket.emit('join', admin);
-        logsPre.textContent = '';
-        fetchLogs();
+      const res = await fetch('/start-bot', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ admin, appstate })
+      });
+      alert(await res.text());
+      logsPre.textContent = '';
 
-        // uptime + usage
-        startTime = Date.now();
-        usageCount++;
-        usageSpan.textContent = usageCount;
-      } catch (e) { alert('Start failed: ' + e); }
+      startTime = Date.now();
+      usageCount++;
+      usageSpan.textContent = usageCount;
     };
 
     stopBtn.onclick = async () => {
       const admin = adminInput.value.trim();
       if (!admin) return alert('Admin UID required');
       const res = await fetch('/stop-bot?uid=' + encodeURIComponent(admin));
-      const text = await res.text();
-      alert(text);
+      alert(await res.text());
     };
 
-    fetchBtn.onclick = fetchLogs;
-
-    async function fetchLogs() {
+    fetchBtn.onclick = async () => {
       const uid = adminInput.value.trim();
       if (!uid) return alert('Enter UID to fetch logs');
       const res = await fetch('/logs?uid=' + encodeURIComponent(uid));
-      const text = await res.text();
-      logsPre.textContent = text;
+      logsPre.textContent = await res.text();
       logsPre.scrollTop = logsPre.scrollHeight;
-    }
+    };
 
-    // uptime timer
     setInterval(() => {
       if (startTime) {
         const diff = Math.floor((Date.now() - startTime)/1000);
