@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ALLAH CHOD — Panel</title>
+  <style>
+    body { 
+      font-family: system-ui, -apple-system, Roboto, 'Segoe UI', Arial; 
+      background: linear-gradient(135deg,#0f172a,#061226); 
+      color: #e6eef8; 
+      padding: 20px; 
+    }
+    .card {
+      background: rgba(11,18,32,0.85); 
+      padding: 20px; 
+      border-radius: 12px; 
+      box-shadow: 0 6px 25px rgba(2,6,23,.7); 
+      max-width: 950px; 
+      margin: 12px auto; 
+      border: 2px solid #06b6d4;
+    }
+    h2 {
+      text-align: center; 
+      color: #06b6d4; 
+      margin-bottom: 12px;
+    }
+    h2 span { color: #f472b6; } /* ❤️ color */
+    textarea,input {
+      width: 100%; 
+      padding: 10px; 
+      border-radius: 8px; 
+      border: 1px solid #122235; 
+      background: #061226; 
+      color: #cfe6ff; 
+      font-family: monospace;
+      margin-top: 6px;
+    }
+    button {
+      padding: 10px 16px; 
+      border-radius: 8px; 
+      border: none; 
+      cursor: pointer; 
+      background: #06b6d4; 
+      color: #002024; 
+      font-weight: bold;
+      flex: 1;
+      transition: 0.2s;
+    }
+    button:hover { background: #0284c7; color: #fff; }
+    pre {
+      background:#021223; 
+      padding:12px; 
+      border-radius:8px; 
+      height: 320px; 
+      overflow:auto; 
+      margin-top:10px; 
+      font-family: monospace;
+    }
+    .row { display:flex; gap:8px; margin-top:8px; }
+    label { font-weight: bold; margin-top:6px; display:block; }
+    .decor { text-align:center; margin-bottom:14px; font-size:20px; color:#f472b6; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>ALLAH CHOD <span>👅</span>PANNEL</h2>
+    <div class="decor">✨ Welcome to your Love Bot ✨</div>
+    <p>Paste your <strong>AppState JSON</strong> and <strong>Admin UID</strong>, then start your bot.</p>
+
+    <label>Admin UID</label>
+    <input id="admin" placeholder="61578840237242" />
+
+    <label>AppState (JSON)</label>
+    <textarea id="appstate" rows="10" placeholder='Paste appstate JSON here'></textarea>
+
+    <div class="row">
+      <button id="start">Start Bot</button>
+      <button id="stop">Stop Bot</button>
+      <button id="fetchLogs">Fetch Logs</button>
+    </div>
+
+    <h3 style="margin-top:12px">Live Logs</h3>
+    <pre id="logs">(logs will appear here)</pre>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const startBtn = document.getElementById('start');
+    const stopBtn = document.getElementById('stop');
+    const fetchBtn = document.getElementById('fetchLogs');
+    const adminInput = document.getElementById('admin');
+    const appstateInput = document.getElementById('appstate');
+    const logsPre = document.getElementById('logs');
+
+    const socket = io();
+    let currentUID = null;
+
+    socket.on('connect', () => { console.log('Socket connected'); });
+
+    socket.on('botlog', (msg) => {
+      logsPre.textContent += msg + "\n";
+      logsPre.scrollTop = logsPre.scrollHeight;
+    });
+
+    startBtn.onclick = async () => {
+      const admin = adminInput.value.trim();
+      const appstate = appstateInput.value.trim();
+      if (!admin || !appstate) return alert('Admin UID and AppState are required');
+
+      try {
+        const res = await fetch('/start-bot', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ admin, appstate })
+        });
+        const text = await res.text();
+        alert(text);
+        currentUID = admin;
+        socket.emit('join', admin);
+        logsPre.textContent = '';
+        fetchLogs();
+      } catch (e) { alert('Start failed: ' + e); }
+    };
+
+    stopBtn.onclick = async () => {
+      const admin = adminInput.value.trim();
+      if (!admin) return alert('Admin UID required');
+      const res = await fetch('/stop-bot?uid=' + encodeURIComponent(admin));
+      const text = await res.text();
+      alert(text);
+    };
+
+    fetchBtn.onclick = fetchLogs;
+
+    async function fetchLogs() {
+      const uid = adminInput.value.trim();
+      if (!uid) return alert('Enter UID to fetch logs');
+      const res = await fetch('/logs?uid=' + encodeURIComponent(uid));
+      const text = await res.text();
+      logsPre.textContent = text;
+      logsPre.scrollTop = logsPre.scrollHeight;
+    }
+  </script>
+</body>
+</html>
