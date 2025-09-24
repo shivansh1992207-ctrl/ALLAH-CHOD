@@ -17,13 +17,13 @@
       padding: 20px;
     }
     .card {
-      background: transparent; /* FULL transparent */
+      background: transparent;
       padding: 20px; 
       border-radius: 16px; 
       max-width: 950px; 
       margin: 20px auto; 
       border: 2px solid rgba(6,182,212,0.8);
-      box-shadow: 0 0 20px rgba(6,182,212,0.8); /* GLOW */
+      box-shadow: 0 0 20px rgba(6,182,212,0.8);
     }
     h2 {
       text-align: center; 
@@ -41,11 +41,11 @@
       padding: 10px; 
       border-radius: 10px; 
       border: 1px solid rgba(6,182,212,0.7); 
-      background: transparent; /* transparent */
+      background: transparent;
       color: #fff; 
       font-family: monospace;
       margin-top: 6px;
-      box-shadow: 0 0 10px rgba(6,182,212,0.6); /* GLOW */
+      box-shadow: 0 0 10px rgba(6,182,212,0.6);
     }
     button {
       padding: 12px 18px; 
@@ -57,7 +57,7 @@
       font-weight: bold;
       flex: 1;
       transition: 0.25s;
-      box-shadow: 0 0 15px rgba(6,182,212,0.8); /* glow */
+      box-shadow: 0 0 15px rgba(6,182,212,0.8);
       text-shadow: 0 0 8px rgba(6,182,212,1);
     }
     button:hover { 
@@ -67,7 +67,7 @@
       transform: scale(1.05);
     }
     pre {
-      background: transparent; 
+      background: rgba(0,0,0,0.3); /* thoda visible background */
       padding:12px; 
       border-radius:10px; 
       height: 320px; 
@@ -75,8 +75,10 @@
       margin-top:10px; 
       font-family: monospace;
       border: 1px solid rgba(6,182,212,0.7);
-      box-shadow: 0 0 15px rgba(6,182,212,0.8); /* logs glow */
+      box-shadow: 0 0 15px rgba(6,182,212,0.8);
       color: #dbeafe;
+      white-space: pre-wrap;       /* wrap long lines */
+      word-break: break-word;      /* avoid invisible overflow */
     }
     .row { display:flex; gap:10px; margin-top:8px; }
     label { 
@@ -170,6 +172,12 @@
     let startTime = null;
     let usageCount = 0;
 
+    // Join socket room for this admin UID
+    adminInput.addEventListener('input', () => {
+      const uid = adminInput.value.trim();
+      if(uid) socket.emit('join', uid);
+    });
+
     socket.on('botlog', (msg) => {
       logsPre.textContent += msg + "\n";
       logsPre.scrollTop = logsPre.scrollHeight;
@@ -191,6 +199,9 @@
       startTime = Date.now();
       usageCount++;
       usageSpan.textContent = usageCount;
+
+      // join socket room again after start
+      socket.emit('join', admin);
     };
 
     stopBtn.onclick = async () => {
