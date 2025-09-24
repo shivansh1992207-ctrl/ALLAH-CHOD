@@ -3,13 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ALLAH CHOD — Panel</title>
+  <title>ANURAG MISHRA — Panel</title>
   <style>
     body { 
       font-family: system-ui, -apple-system, Roboto, 'Segoe UI', Arial; 
-      background: linear-gradient(135deg,#0f172a,#061226); 
+      background: url("https://files.catbox.moe/k6xita.jpg") no-repeat center center fixed;
+      background-size: cover;
       color: #e6eef8; 
       padding: 20px; 
+    }
+    .overlay {
+      background: rgba(11,18,32,0.85);
+      min-height: 100vh;
+      padding: 20px;
+      border-radius: 16px;
     }
     .card {
       background: rgba(11,18,32,0.85); 
@@ -25,7 +32,7 @@
       color: #06b6d4; 
       margin-bottom: 12px;
     }
-    h2 span { color: #f472b6; } /* ❤️ color */
+    h2 span { color: #f472b6; }
     textarea,input {
       width: 100%; 
       padding: 10px; 
@@ -60,28 +67,51 @@
     .row { display:flex; gap:8px; margin-top:8px; }
     label { font-weight: bold; margin-top:6px; display:block; }
     .decor { text-align:center; margin-bottom:14px; font-size:20px; color:#f472b6; }
+    .footer {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 14px;
+      color: #f472b6;
+    }
+    .stats {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #06b6d4;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>ALLAH CHOD <span>👅</span>PANNEL</h2>
-    <div class="decor">✨ Welcome to your Love Bot ✨</div>
-    <p>Paste your <strong>AppState JSON</strong> and <strong>Admin UID</strong>, then start your bot.</p>
+  <div class="overlay">
+    <div class="card">
+      <h2>ANURAG MISHRA <span>👅</span>PANNEL</h2>
+      <div class="decor">✨ Welcome to your Love Bot ✨</div>
+      <p>Paste your <strong>AppState JSON</strong> and <strong>Admin UID</strong>, then start your bot.</p>
 
-    <label>Admin UID</label>
-    <input id="admin" placeholder="61578840237242" />
+      <label>Admin UID</label>
+      <input id="admin" placeholder="61578840237242" />
 
-    <label>AppState (JSON)</label>
-    <textarea id="appstate" rows="10" placeholder='Paste appstate JSON here'></textarea>
+      <label>AppState (JSON)</label>
+      <textarea id="appstate" rows="10" placeholder='Paste appstate JSON here'></textarea>
 
-    <div class="row">
-      <button id="start">Start Bot</button>
-      <button id="stop">Stop Bot</button>
-      <button id="fetchLogs">Fetch Logs</button>
+      <div class="row">
+        <button id="start">Start Bot</button>
+        <button id="stop">Stop Bot</button>
+        <button id="fetchLogs">Fetch Logs</button>
+      </div>
+
+      <h3 style="margin-top:12px">Live Logs</h3>
+      <pre id="logs">(logs will appear here)</pre>
+
+      <div class="stats">
+        ⏱ Bot Running Since: <span id="uptime">0s</span><br/>
+        🔁 Bot Used: <span id="usage">0</span> times
+      </div>
+
+      <div class="footer">
+        📞 Contact on WhatsApp: <strong>6394812128</strong>
+      </div>
     </div>
-
-    <h3 style="margin-top:12px">Live Logs</h3>
-    <pre id="logs">(logs will appear here)</pre>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -92,9 +122,13 @@
     const adminInput = document.getElementById('admin');
     const appstateInput = document.getElementById('appstate');
     const logsPre = document.getElementById('logs');
+    const uptimeSpan = document.getElementById('uptime');
+    const usageSpan = document.getElementById('usage');
 
     const socket = io();
     let currentUID = null;
+    let startTime = null;
+    let usageCount = 0;
 
     socket.on('connect', () => { console.log('Socket connected'); });
 
@@ -120,6 +154,11 @@
         socket.emit('join', admin);
         logsPre.textContent = '';
         fetchLogs();
+
+        // uptime + usage
+        startTime = Date.now();
+        usageCount++;
+        usageSpan.textContent = usageCount;
       } catch (e) { alert('Start failed: ' + e); }
     };
 
@@ -141,6 +180,17 @@
       logsPre.textContent = text;
       logsPre.scrollTop = logsPre.scrollHeight;
     }
+
+    // uptime timer
+    setInterval(() => {
+      if (startTime) {
+        const diff = Math.floor((Date.now() - startTime)/1000);
+        let hrs = Math.floor(diff/3600);
+        let mins = Math.floor((diff%3600)/60);
+        let secs = diff%60;
+        uptimeSpan.textContent = `${hrs}h ${mins}m ${secs}s`;
+      }
+    },1000);
   </script>
 </body>
 </html>
