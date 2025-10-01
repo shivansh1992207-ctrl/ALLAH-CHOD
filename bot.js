@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const fca = require("nexus-fca");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 let fca = null;
 
